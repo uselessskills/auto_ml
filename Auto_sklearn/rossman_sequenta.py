@@ -19,7 +19,7 @@ def main():
     closed_store_data = data_test["Id"][data_test["Open"] == 0].values
     data_train.StateHoliday = data_train.StateHoliday.replace(0,'0')
     data_test.StateHoliday = data_test.StateHoliday.replace(0,'0')
-    data_train = data_train.sample(70000)
+    data_train = data_train.sample(150000)
     #print (data_train.tail())
     data_train['Year'] = data_train['Date'].apply(lambda x: int(x[:4]))
     data_train['Month'] = data_train['Date'].apply(lambda x: int(x[5:7]))
@@ -47,9 +47,9 @@ def main():
     #Start auto-sklearn
     feature_types = (['numerical']) + (['categorical']*4) + (['numerical']*2) + (['categorical']*3) +(['numerical'])
     automl = autosklearn.regression.AutoSklearnRegressor(
-        time_left_for_this_task=1200,
-        per_run_time_limit=120,
-        ml_memory_limit = 2048,
+        time_left_for_this_task=3600,
+        per_run_time_limit=360,
+        ml_memory_limit = 3072,
         tmp_folder=tmp_folder,
         output_folder=output_folder,
         initial_configurations_via_metalearning = 0,
@@ -62,7 +62,7 @@ def main():
     predictions = automl.predict(new_test, n_jobs = 4)
 
     df = pd.DataFrame({"Id": data_test.Id, "Sales": predictions})
-    df.to_csv('predictions_16_58.csv', index = 0)
+    df.to_csv('predictions_17_23.csv', index = 0)
 
 if __name__ == '__main__':
     main()
