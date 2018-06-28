@@ -55,8 +55,8 @@ def get_spawn_regressor(X_train, y_train, feature_types):
         # models.
         # 3. all instances of the AutoSklearnClassifier must have a different seed!
         automl = autosklearn.regression.AutoSklearnRegressor(
-            time_left_for_this_task=4800,
-            per_run_time_limit=480,
+            time_left_for_this_task=360,
+            per_run_time_limit=120,
             ml_memory_limit = 2048,
             shared_mode=True, # tmp folder will be shared between seeds
             tmp_folder=tmp_folder,
@@ -68,6 +68,8 @@ def get_spawn_regressor(X_train, y_train, feature_types):
             smac_scenario_args=smac_scenario_args,
         )
         automl.fit(X_train, y_train, metric = autosklearn.metrics.mean_squared_error, feat_type=feature_types, dataset_name='rossman')
+        print(automl.show_models())
+        print('\nStatistics: \n', automl.sprint_statistics())
     return spawn_regressor
 
 
@@ -82,7 +84,7 @@ def main():
     data_train['Month'] = data_train['Date'].apply(lambda x: int(x[5:7]))
     data_train["HolidayBin"] = data_train.StateHoliday.map({"0": 0, "a": 1, "b": 1, "c": 1})
     store["Assortment"] = store.Assortment.map({"0": 0, "a": 1, "b": 2, "c": 3})
-    store["StoreType"] = store.StoreType.map({"0": 0, "a": 1, "b": 2, "c": 3})
+    store["StoreType"] = store.StoreType.map({"0": 0, "a": 1, "b": 2, "c": 3, "d":4})
     del data_train['Date']
     del data_train['StateHoliday']
     data_test['Year'] = data_test['Date'].apply(lambda x: int(x[:4]))
@@ -94,7 +96,7 @@ def main():
     X_train.drop(["Sales", "Customers"], axis = 1, inplace = True)
 
 
-    print (store.head(5))
+    #print (store.head(5))
 
 
     y_train = data_train['Sales'].copy()
@@ -107,7 +109,7 @@ def main():
     new_train = pd.merge(X_train, store[["Store", "StoreType", "Assortment", "CompetitionDistance"]], on = 'Store', how = 'left')
     new_test = pd.merge(X_test, store[["Store", "StoreType", "Assortment", "CompetitionDistance"]], on = 'Store', how = 'left')
     feature_types = (['numerical']) + (['categorical']*4) + (['numerical']*2) + (['categorical']*3) +(['numerical'])
-
+    #print (new_train.StoreType.unique())
     processes = []
     spawn_regressor = get_spawn_regressor(new_train, y_train,feature_types)
     for i in range(2): # set this at roughly half of your cores
@@ -148,7 +150,7 @@ def main():
 
     predictions = automl.predict(new_test, n_jobs = 4)
     df = pd.DataFrame({"Id": data_test.Id, "Sales": predictions})
-    df.to_csv('predictions.csv', index = 0)
+    df.to_csv('predictions_parallel_15_48.csv', index = 0)
 
 if __name__ == '__main__':
     main()
